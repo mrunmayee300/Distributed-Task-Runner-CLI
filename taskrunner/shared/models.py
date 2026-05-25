@@ -59,7 +59,7 @@ class TaskSpec:
     depends_on: set[str] = field(default_factory=set)
     batch_key: str | None = None
 
-    def normalized(self) -> "TaskSpec":
+    def normalized(self) -> TaskSpec:
         return TaskSpec(
             target=self.target,
             payload=self.payload,
@@ -97,7 +97,7 @@ class TaskEnvelope:
         return data
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "TaskEnvelope":
+    def from_dict(cls, data: dict[str, Any]) -> TaskEnvelope:
         spec_data = dict(data["spec"])
         spec_data["kind"] = TaskKind(spec_data.get("kind", TaskKind.IO))
         spec_data["affinity"] = set(spec_data.get("affinity", []))

@@ -3,8 +3,8 @@ from __future__ import annotations
 import heapq
 import threading
 from collections import defaultdict
+from collections.abc import Iterable
 from time import monotonic, time
-from typing import Iterable
 
 from taskrunner.shared.models import QueueSnapshot, TaskEnvelope, TaskStatus, WorkerInfo
 
@@ -183,13 +183,14 @@ class InMemoryTaskQueue:
 
     @property
     def depth(self) -> int:
+        terminal = {
+            TaskStatus.SUCCEEDED,
+            TaskStatus.FAILED,
+            TaskStatus.CANCELLED,
+            TaskStatus.DEAD_LETTERED,
+        }
         return len(self._tasks) - len(
-            [
-                task
-                for task in self._tasks.values()
-                if task.status
-                in {TaskStatus.SUCCEEDED, TaskStatus.FAILED, TaskStatus.CANCELLED, TaskStatus.DEAD_LETTERED}
-            ]
+            [task for task in self._tasks.values() if task.status in terminal]
         )
 
     def _push(self, task: TaskEnvelope) -> None:
@@ -218,26 +219,28 @@ class InMemoryTaskQueue:
         worker: WorkerInfo,
         completed_dependencies: set[str],
     ) -> TaskEnvelope | None:
-        best: tuple[int, float, int, str] | None = None
-        best_queue: str | None = None
+        candidates: list[tuple[tuple[int, float, int, str], str]] = []
         for queue_name in worker.queues:
             queue = self._ready.get(queue_name)
             if not queue:
                 continue
-            while queue and queue[0][3] in self._cancelled:
-                heapq.heappop(queue)
-            if not queue:
-                continue
-            candidate = queue[0]
-            task = self._tasks[candidate[3]]
-            if not worker.accepts(task):
-                continue
-            if task.spec.depends_on and not task.spec.depends_on <= completed_dependencies:
-                continue
-            if best is None or candidate < best:
-                best = candidate
-                best_queue = queue_name
-        if best is None or best_queue is None:
+            retained: list[tuple[int, float, int, str]] = []
+            while queue:
+                candidate = heapq.heappop(queue)
+                task_id = candidate[3]
+                if task_id in self._cancelled:
+                    continue
+                retained.append(candidate)
+                task = self._tasks[task_id]
+                dependencies_ready = task.spec.depends_on <= completed_dependencies
+                if worker.accepts(task) and dependencies_ready:
+                    candidates.append((candidate, queue_name))
+            for candidate in retained:
+                heapq.heappush(queue, candidate)
+
+        if not candidates:
             return None
-        heapq.heappop(self._ready[best_queue])
+        best, best_queue = min(candidates, key=lambda item: item[0])
+        self._ready[best_queue].remove(best)
+        heapq.heapify(self._ready[best_queue])
         return self._tasks[best[3]]

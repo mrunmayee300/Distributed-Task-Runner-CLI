@@ -4,39 +4,63 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+DEFAULT_SCHEDULER_HOST = "127.0.0.1"
+DEFAULT_SCHEDULER_GRPC_PORT = 50051
+DEFAULT_API_HOST = "127.0.0.1"
+DEFAULT_API_PORT = 8080
+DEFAULT_SQLITE_PATH = Path("data/taskrunner.db")
+DEFAULT_HEARTBEAT_INTERVAL_SECONDS = 2.0
+DEFAULT_HEARTBEAT_TIMEOUT_SECONDS = 10.0
+DEFAULT_LEASE_SECONDS = 30.0
+DEFAULT_MAX_QUEUE_DEPTH = 10_000
+DEFAULT_WORKER_CAPACITY = max(1, (os.cpu_count() or 2) - 1)
+DEFAULT_LOG_LEVEL = "INFO"
+
 
 @dataclass(frozen=True, slots=True)
 class Settings:
-    scheduler_host: str = "127.0.0.1"
-    scheduler_grpc_port: int = 50051
-    api_host: str = "127.0.0.1"
-    api_port: int = 8080
-    sqlite_path: Path = Path("data/taskrunner.db")
-    heartbeat_interval_seconds: float = 2.0
-    heartbeat_timeout_seconds: float = 10.0
-    lease_seconds: float = 30.0
-    max_queue_depth: int = 10_000
-    worker_capacity: int = max(1, (os.cpu_count() or 2) - 1)
-    log_level: str = "INFO"
+    scheduler_host: str = DEFAULT_SCHEDULER_HOST
+    scheduler_grpc_port: int = DEFAULT_SCHEDULER_GRPC_PORT
+    api_host: str = DEFAULT_API_HOST
+    api_port: int = DEFAULT_API_PORT
+    sqlite_path: Path = DEFAULT_SQLITE_PATH
+    heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS
+    heartbeat_timeout_seconds: float = DEFAULT_HEARTBEAT_TIMEOUT_SECONDS
+    lease_seconds: float = DEFAULT_LEASE_SECONDS
+    max_queue_depth: int = DEFAULT_MAX_QUEUE_DEPTH
+    worker_capacity: int = DEFAULT_WORKER_CAPACITY
+    log_level: str = DEFAULT_LOG_LEVEL
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         return cls(
-            scheduler_host=os.getenv("TASKRUNNER_SCHEDULER_HOST", cls.scheduler_host),
-            scheduler_grpc_port=int(os.getenv("TASKRUNNER_SCHEDULER_GRPC_PORT", cls.scheduler_grpc_port)),
-            api_host=os.getenv("TASKRUNNER_API_HOST", cls.api_host),
-            api_port=int(os.getenv("TASKRUNNER_API_PORT", cls.api_port)),
-            sqlite_path=Path(os.getenv("TASKRUNNER_SQLITE_PATH", str(cls.sqlite_path))),
+            scheduler_host=os.getenv("TASKRUNNER_SCHEDULER_HOST", DEFAULT_SCHEDULER_HOST),
+            scheduler_grpc_port=int(
+                os.getenv("TASKRUNNER_SCHEDULER_GRPC_PORT", str(DEFAULT_SCHEDULER_GRPC_PORT))
+            ),
+            api_host=os.getenv("TASKRUNNER_API_HOST", DEFAULT_API_HOST),
+            api_port=int(os.getenv("TASKRUNNER_API_PORT", str(DEFAULT_API_PORT))),
+            sqlite_path=Path(os.getenv("TASKRUNNER_SQLITE_PATH", str(DEFAULT_SQLITE_PATH))),
             heartbeat_interval_seconds=float(
-                os.getenv("TASKRUNNER_HEARTBEAT_INTERVAL_SECONDS", cls.heartbeat_interval_seconds)
+                os.getenv(
+                    "TASKRUNNER_HEARTBEAT_INTERVAL_SECONDS",
+                    str(DEFAULT_HEARTBEAT_INTERVAL_SECONDS),
+                )
             ),
             heartbeat_timeout_seconds=float(
-                os.getenv("TASKRUNNER_HEARTBEAT_TIMEOUT_SECONDS", cls.heartbeat_timeout_seconds)
+                os.getenv(
+                    "TASKRUNNER_HEARTBEAT_TIMEOUT_SECONDS",
+                    str(DEFAULT_HEARTBEAT_TIMEOUT_SECONDS),
+                )
             ),
-            lease_seconds=float(os.getenv("TASKRUNNER_LEASE_SECONDS", cls.lease_seconds)),
-            max_queue_depth=int(os.getenv("TASKRUNNER_MAX_QUEUE_DEPTH", cls.max_queue_depth)),
-            worker_capacity=int(os.getenv("TASKRUNNER_WORKER_CAPACITY", cls.worker_capacity)),
-            log_level=os.getenv("TASKRUNNER_LOG_LEVEL", cls.log_level),
+            lease_seconds=float(os.getenv("TASKRUNNER_LEASE_SECONDS", str(DEFAULT_LEASE_SECONDS))),
+            max_queue_depth=int(
+                os.getenv("TASKRUNNER_MAX_QUEUE_DEPTH", str(DEFAULT_MAX_QUEUE_DEPTH))
+            ),
+            worker_capacity=int(
+                os.getenv("TASKRUNNER_WORKER_CAPACITY", str(DEFAULT_WORKER_CAPACITY))
+            ),
+            log_level=os.getenv("TASKRUNNER_LOG_LEVEL", DEFAULT_LOG_LEVEL),
         )
 
     @property

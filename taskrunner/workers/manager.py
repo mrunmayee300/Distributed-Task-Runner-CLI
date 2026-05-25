@@ -23,7 +23,11 @@ class SchedulerTransport(Protocol):
 
     async def heartbeat(self, worker_id: str, running_tasks: int) -> bool: ...
 
-    async def reserve(self, worker_id: str, timeout_seconds: float = 1.0) -> TaskEnvelope | None: ...
+    async def reserve(
+        self,
+        worker_id: str,
+        timeout_seconds: float = 1.0,
+    ) -> TaskEnvelope | None: ...
 
     async def report_result(self, result: TaskResult) -> TaskEnvelope: ...
 
@@ -68,7 +72,9 @@ class WorkerRuntime:
         self._install_signal_handlers()
         await transport.register_worker(self.worker)
         heartbeat = asyncio.create_task(self._heartbeat_loop(transport))
-        consumers = [asyncio.create_task(self._consume_loop(transport)) for _ in range(self.worker.capacity)]
+        consumers = [
+            asyncio.create_task(self._consume_loop(transport)) for _ in range(self.worker.capacity)
+        ]
         try:
             await self._stop.wait()
         finally:

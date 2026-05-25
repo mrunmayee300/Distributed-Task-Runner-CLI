@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import os
 import socket
-from dataclasses import asdict
 from contextlib import suppress
+from dataclasses import asdict
 from time import time
 from typing import Any
 
@@ -68,7 +68,10 @@ class SchedulerEngine:
             task = self.queue.submit(TaskEnvelope(spec=spec.normalized()))
             self.store.upsert_task(task)
         await self.event_bus.publish(
-            ClusterEvent(EventType.TASK_SUBMITTED, {"task_id": task.task_id, "queue": task.spec.queue})
+            ClusterEvent(
+                EventType.TASK_SUBMITTED,
+                {"task_id": task.task_id, "queue": task.spec.queue},
+            )
         )
         self._drain_event.set()
         return task
@@ -180,7 +183,10 @@ class SchedulerEngine:
         task = self.queue.cancel(task_id)
         self.store.upsert_task(task)
         await self.event_bus.publish(
-            ClusterEvent(EventType.TASK_FAILED, {"task_id": task_id, "status": str(TaskStatus.CANCELLED)})
+            ClusterEvent(
+                EventType.TASK_FAILED,
+                {"task_id": task_id, "status": str(TaskStatus.CANCELLED)},
+            )
         )
         return task
 
@@ -207,9 +213,12 @@ class SchedulerEngine:
 
     def autoscaling_recommendation(self) -> dict[str, Any]:
         snapshot = self.queue.snapshot()
-        online_workers = [worker for worker in self.workers.values() if worker.status != WorkerStatus.OFFLINE]
+        online_workers = [
+            worker for worker in self.workers.values() if worker.status != WorkerStatus.OFFLINE
+        ]
         total_capacity = sum(worker.capacity for worker in online_workers) or 1
-        desired = max(1, min(32, int((snapshot.queued + snapshot.delayed) / total_capacity) + len(online_workers)))
+        backlog_ratio = int((snapshot.queued + snapshot.delayed) / total_capacity)
+        desired = max(1, min(32, backlog_ratio + len(online_workers)))
         return {
             "current_workers": len(online_workers),
             "desired_workers": desired,
@@ -259,4 +268,5 @@ def build_worker_info(
         queues=queues or {"default"},
         labels=labels or set(),
         capacity=capacity,
+        status=WorkerStatus.IDLE,
     )

@@ -14,7 +14,7 @@ class SchedulerClient:
         self._channel: grpc.aio.Channel | None = None
         self._stub: taskrunner_pb2_grpc.SchedulerStub | None = None
 
-    async def __aenter__(self) -> "SchedulerClient":
+    async def __aenter__(self) -> SchedulerClient:
         self._channel = grpc.aio.insecure_channel(self.target)
         self._stub = taskrunner_pb2_grpc.SchedulerStub(self._channel)
         return self

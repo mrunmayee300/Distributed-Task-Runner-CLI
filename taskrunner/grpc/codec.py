@@ -3,7 +3,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from taskrunner.shared.models import TaskEnvelope, TaskKind, TaskResult, TaskSpec, TaskStatus, WorkerInfo, WorkerStatus
+from taskrunner.shared.models import (
+    TaskEnvelope,
+    TaskKind,
+    TaskResult,
+    TaskSpec,
+    TaskStatus,
+    WorkerInfo,
+    WorkerStatus,
+)
 
 
 def spec_to_proto(spec: TaskSpec, pb2: Any) -> Any:

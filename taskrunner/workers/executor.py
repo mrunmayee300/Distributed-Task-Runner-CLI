@@ -5,10 +5,11 @@ import importlib.util
 import inspect
 import multiprocessing as mp
 import threading
+from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 from time import time
-from typing import Any, Callable
+from typing import Any
 
 from taskrunner.shared.models import TaskEnvelope, TaskKind, TaskResult, TaskStatus
 
@@ -16,7 +17,9 @@ from taskrunner.shared.models import TaskEnvelope, TaskKind, TaskResult, TaskSta
 def _load_callable(target: str) -> Callable[..., Any]:
     module_path, _, function_name = target.partition(":")
     if not module_path or not function_name:
-        raise ValueError("target must use 'path/to/file.py:function_name' or 'module:function_name'")
+        raise ValueError(
+            "target must use 'path/to/file.py:function_name' or 'module:function_name'"
+        )
 
     if module_path.endswith(".py") or Path(module_path).exists():
         path = Path(module_path).resolve()

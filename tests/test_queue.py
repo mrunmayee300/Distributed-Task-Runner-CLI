@@ -11,7 +11,11 @@ def test_priority_delay_retry_and_dead_letter() -> None:
     queue = InMemoryTaskQueue(max_depth=10)
     worker = build_worker_info("worker-1", queues={"default"}, labels={"gpu"}, capacity=1)
 
-    slow = queue.submit(TaskEnvelope(TaskSpec(target="sample_tasks.io_job:run", priority=50, delay_seconds=0.05)))
+    slow = queue.submit(
+        TaskEnvelope(
+            TaskSpec(target="sample_tasks.io_job:run", priority=50, delay_seconds=0.05)
+        )
+    )
     fast = queue.submit(TaskEnvelope(TaskSpec(target="sample_tasks.io_job:run", priority=1)))
 
     assert queue.reserve(worker, set(), timeout=0).task_id == fast.task_id

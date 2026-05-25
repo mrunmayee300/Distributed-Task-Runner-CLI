@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import asynccontextmanager, suppress
 from dataclasses import asdict
-from contextlib import suppress
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -35,19 +35,21 @@ class SubmitTaskBody(BaseModel):
 def create_app(engine: SchedulerEngine | None = None) -> FastAPI:
     scheduler = engine or SchedulerEngine(settings)
     metrics = MetricsAggregator(scheduler)
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        await scheduler.start_background_services()
+        try:
+            yield
+        finally:
+            await scheduler.stop_background_services()
+
     app = FastAPI(
         title="Distributed Task Runner Monitoring API",
         version="0.1.0",
         description="Async control plane for queues, workers, tasks, metrics, and live events.",
+        lifespan=lifespan,
     )
-
-    @app.on_event("startup")
-    async def _startup() -> None:
-        await scheduler.start_background_services()
-
-    @app.on_event("shutdown")
-    async def _shutdown() -> None:
-        await scheduler.stop_background_services()
 
     @app.post("/tasks", status_code=202)
     async def submit_task(body: SubmitTaskBody) -> dict[str, Any]:
@@ -77,7 +79,12 @@ def create_app(engine: SchedulerEngine | None = None) -> FastAPI:
             task = await scheduler.retry_task(task_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="task not found") from exc
-        background_tasks.add_task(scheduler.store.append_log, task_id, "INFO", "manual retry requested")
+        background_tasks.add_task(
+            scheduler.store.append_log,
+            task_id,
+            "INFO",
+            "manual retry requested",
+        )
         return task.to_dict()
 
     @app.get("/workers")

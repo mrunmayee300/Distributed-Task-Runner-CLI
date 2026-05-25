@@ -39,6 +39,11 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["taskrunner/grpc/protos/*_pb2*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "SIM"]
+ignore = ["ASYNC109"]
+
+[tool.ruff.lint.per-file-ignores]
+"taskrunner/cli/main.py" = ["B008"]
