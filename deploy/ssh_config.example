@@ -1,0 +1,10 @@
+Host taskrunner-scheduler
+  HostName scheduler.example.com
+  User taskrunner
+  IdentityFile ~/.ssh/taskrunner
+  ServerAliveInterval 30
+
+Host taskrunner-worker-*
+  User taskrunner
+  IdentityFile ~/.ssh/taskrunner
+  ServerAliveInterval 30

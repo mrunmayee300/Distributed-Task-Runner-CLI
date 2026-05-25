@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import socket
-from collections import defaultdict
+from dataclasses import asdict
 from contextlib import suppress
 from time import time
 from typing import Any
@@ -44,8 +44,12 @@ class SchedulerEngine:
         self._results: dict[str, TaskResult] = {}
         self._drain_event = asyncio.Event()
         self._background_tasks: set[asyncio.Task[None]] = set()
+        self._services_started = False
 
     async def start_background_services(self) -> None:
+        if self._services_started:
+            return
+        self._services_started = True
         for coro in (self._heartbeat_reaper(), self._lease_reaper(), self._pressure_reporter()):
             task = asyncio.create_task(coro)
             self._background_tasks.add(task)
@@ -57,6 +61,7 @@ class SchedulerEngine:
         for task in list(self._background_tasks):
             with suppress(asyncio.CancelledError):
                 await task
+        self._services_started = False
 
     async def submit(self, spec: TaskSpec) -> TaskEnvelope:
         async with self.locks.acquire(f"queue:{spec.queue}"):
@@ -194,7 +199,7 @@ class SchedulerEngine:
         return {
             "host": socket.gethostname(),
             "pid": os.getpid(),
-            "queue": queue.__dict__,
+            "queue": asdict(queue),
             "workers": [worker.to_dict() for worker in workers],
             "tasks": self.store.task_counts(),
             "results": len(self._results),
