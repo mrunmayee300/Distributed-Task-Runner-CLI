@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package taskrunner.v1;
+
+message TaskSpec {
+  string target = 1;
+  map<string, string> payload = 2;
+  string kind = 3;
+  string queue = 4;
+  int32 priority = 5;
+  double delay_seconds = 6;
+  int32 max_retries = 7;
+  double retry_backoff_seconds = 8;
+  double timeout_seconds = 9;
+  repeated string affinity = 10;
+  repeated string depends_on = 11;
+  string batch_key = 12;
+}
+
+message TaskEnvelope {
+  string task_id = 1;
+  TaskSpec spec = 2;
+  string status = 3;
+  int32 attempts = 4;
+  string assigned_worker = 5;
+  string last_error = 6;
+  double created_at = 7;
+  double available_at = 8;
+}
+
+message WorkerInfo {
+  string worker_id = 1;
+  string host = 2;
+  int32 pid = 3;
+  repeated string queues = 4;
+  int32 capacity = 5;
+  repeated string labels = 6;
+  string status = 7;
+  int32 running_tasks = 8;
+}
+
+message TaskResult {
+  string task_id = 1;
+  string worker_id = 2;
+  string status = 3;
+  string result_json = 4;
+  string error = 5;
+  double started_at = 6;
+  double finished_at = 7;
+}
+
+message SubmitTaskRequest {
+  TaskSpec spec = 1;
+}
+
+message SubmitTaskResponse {
+  TaskEnvelope task = 1;
+}
+
+message RegisterWorkerRequest {
+  WorkerInfo worker = 1;
+}
+
+message RegisterWorkerResponse {
+  WorkerInfo worker = 1;
+}
+
+message HeartbeatRequest {
+  string worker_id = 1;
+  int32 running_tasks = 2;
+}
+
+message HeartbeatResponse {
+  WorkerInfo worker = 1;
+  bool known = 2;
+}
+
+message ReserveTaskRequest {
+  string worker_id = 1;
+  double timeout_seconds = 2;
+}
+
+message ReserveTaskResponse {
+  TaskEnvelope task = 1;
+  bool found = 2;
+}
+
+message ReportResultRequest {
+  TaskResult result = 1;
+}
+
+message ReportResultResponse {
+  TaskEnvelope task = 1;
+}
+
+message TaskMutationRequest {
+  string task_id = 1;
+}
+
+service Scheduler {
+  rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
+  rpc RegisterWorker(RegisterWorkerRequest) returns (RegisterWorkerResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReserveTask(ReserveTaskRequest) returns (ReserveTaskResponse);
+  rpc ReportResult(ReportResultRequest) returns (ReportResultResponse);
+  rpc CancelTask(TaskMutationRequest) returns (ReportResultResponse);
+  rpc RetryTask(TaskMutationRequest) returns (ReportResultResponse);
+}
