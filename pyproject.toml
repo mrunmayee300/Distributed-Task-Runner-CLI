@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "distributed-task-runner-cli"
+version = "0.1.0"
+description = "Production-style distributed task runner with scheduler, workers, gRPC, FastAPI monitoring, and CLI."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Distributed Task Runner Contributors" }]
+dependencies = [
+  "fastapi>=0.111",
+  "grpcio>=1.64",
+  "grpcio-tools>=1.64",
+  "protobuf>=5.27",
+  "typer>=0.12",
+  "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.27",
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.5",
+]
+
+[project.scripts]
+taskrunner = "taskrunner.cli.main:app"
+
+[tool.setuptools.packages.find]
+include = ["taskrunner*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "SIM"]
