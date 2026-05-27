@@ -320,22 +320,6 @@ $env:TASKRUNNER_SCHEDULER_GRPC_PORT = "50052"   # only if using custom ports
 python -m taskrunner.cli.main submit sample_tasks/io_job.py --kind async --payload '{\"url\":\"local\",\"delay\":0.5}'
 ```
 
-**Example output:**
-
-```json
-{
-  "spec": {
-    "target": "sample_tasks\\io_job.py:run",
-    "payload": { "url": "local", "delay": 0.5 },
-    "kind": "async",
-    "queue": "default",
-    "priority": 100
-  },
-  "task_id": "task-22f1f2323e194b8c90975324d99f8d6c",
-  "status": "running",
-  "assigned_worker": "worker-6725e367"
-}
-```
 
 Confirm completion:
 
@@ -353,9 +337,8 @@ taskrunner logs task-22f1f2323e194b8c90975324d99f8d6c
 ]
 ```
 
-### img-02 — Live metrics (`monitor`)
+### img-02 — Metrics 
 
-Stream queue pressure, worker load, and task counters every 2 seconds (Ctrl+C to stop).
 
 ![Monitor CLI output](docs/images/img-02-monitor-metrics.png)
 
@@ -366,35 +349,6 @@ taskrunner monitor
 # or: taskrunner monitor --interval 1
 ```
 
-**Example metrics snapshot:**
-
-```json
-{
-  "host": "MRUNMAYEE",
-  "queue": {
-    "queued": 0,
-    "delayed": 0,
-    "inflight": 0,
-    "dead_lettered": 0,
-    "pressure": 0.0
-  },
-  "workers": [
-    {
-      "worker_id": "worker-6725e367",
-      "status": "idle",
-      "running_tasks": 0,
-      "queues": ["cpu", "default", "io"],
-      "labels": ["cpu", "gpu"]
-    }
-  ],
-  "tasks": { "succeeded": 3 },
-  "autoscaling": {
-    "current_workers": 2,
-    "desired_workers": 2,
-    "pressure": 0.0
-  }
-}
-```
 
 ---
 
